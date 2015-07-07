@@ -16,16 +16,28 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import com.microsoft.windowsazure.mobileservices.*;
+import com.microsoft.windowsazure.mobileservices.http.ServiceFilterResponse;
+import com.microsoft.windowsazure.mobileservices.table.TableOperationCallback;
+
+import java.net.MalformedURLException;
+
+import it.ialweb.poi.it.ialweb.poi.models.Post;
 
 public class MainActivity extends AppCompatActivity {
 
 	private TabLayout tabLayout;
 	private ViewPager viewPager;
+	private MobileServiceClient mClient;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+
+		setupAMC();
+
+		mockData();
 
 		setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
 
@@ -63,7 +75,32 @@ public class MainActivity extends AppCompatActivity {
 		});
 	}
 
-	public static class PlaceHolder extends Fragment {
+	private void setupAMC() {
+		try {
+			mClient = new MobileServiceClient(
+                    "https://baassi.azure-mobile.net/",
+                    "QsyouuxvWGyryvCCVrCIvEvJCvgNQh42",
+                    this
+            );
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void mockData() {
+		Post post = new Post("1", "Hello!");
+		mClient.getTable(Post.class).insert(post, new TableOperationCallback<Post>() {
+			public void onCompleted(Post entity, Exception exception, ServiceFilterResponse response) {
+				if (exception == null) {
+					System.out.println();
+				} else {
+                    System.out.println();
+				}
+			}
+		});
+	}
+
+	public class PlaceHolder extends Fragment {
 		@Override
 		public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 			RecyclerView recyclerView = new RecyclerView(getActivity());
@@ -76,7 +113,15 @@ public class MainActivity extends AppCompatActivity {
 
 				@Override
 				public void onBindViewHolder(ViewHolder holder, int position) {
-					((TextView) holder.itemView).setText("Item " + position);
+                    final ViewHolder fHolder = holder;
+                    mClient.getTable(Post.class).lookUp(position, new TableOperationCallback<Post>() {
+                        @Override
+                        public void onCompleted(Post entity, Exception exception, ServiceFilterResponse response) {
+                            if (entity != null)
+                                ((TextView) fHolder.itemView).setText(entity.toString());
+                        }
+                    });
+
 				}
 
 				@Override
