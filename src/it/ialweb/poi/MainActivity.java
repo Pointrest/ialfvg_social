@@ -2,26 +2,17 @@ package it.ialweb.poi;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.RecyclerView.ViewHolder;
 import android.support.v7.widget.Toolbar;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.ViewGroup;
-import android.widget.ListView;
-import android.widget.TextView;
 
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.microsoft.windowsazure.mobileservices.*;
 import com.microsoft.windowsazure.mobileservices.authentication.MobileServiceAuthenticationProvider;
@@ -36,17 +27,22 @@ import com.microsoft.windowsazure.mobileservices.table.TableOperationCallback;
 import java.net.MalformedURLException;
 
 import it.ialweb.poi.it.ialweb.poi.models.Post;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ExecutionException;
 
 import com.microsoft.windowsazure.mobileservices.MobileServiceException;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements NewPostDialog.Callback {
 
     private TabLayout tabLayout;
     private ViewPager viewPager;
     private MobileServiceClient mClient;
     private MobileServiceTable<Post> mPostTable;
+    private List<Post> mPosts = new ArrayList<Post>();
+
 
     public static final String SHAREDPREFFILE = "temp";
     public static final String USERIDPREF = "uid";
@@ -54,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
 
     public boolean bAuthenticating = false;
     public final Object mAuthenticationLock = new Object();
+    private String mUserId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -105,7 +102,8 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.fabBtn).setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                Snackbar.make(findViewById(R.id.coordinator), "abcdefg", Snackbar.LENGTH_LONG).show();
+                new NewPostDialog().show(getSupportFragmentManager(), "WHAT_GOES_HERE?");
+                //Snackbar.make(findViewById(R.id.coordinator), "abcdefg", Snackbar.LENGTH_LONG).show();
             }
         });
     }
@@ -125,6 +123,8 @@ public class MainActivity extends AppCompatActivity {
         editor.putString(USERIDPREF, user.getUserId());
         editor.putString(TOKENPREF, user.getAuthenticationToken());
         editor.commit();
+
+        mUserId = user.getUserId();
     }
 
     private boolean loadUserTokenCache(MobileServiceClient client)
@@ -140,7 +140,7 @@ public class MainActivity extends AppCompatActivity {
         MobileServiceUser user = new MobileServiceUser(userId);
         user.setAuthenticationToken(token);
         client.setCurrentUser(user);
-
+        mUserId = userId;
         return true;
     }
 
@@ -191,19 +191,6 @@ public class MainActivity extends AppCompatActivity {
                 request.addHeader("X-ZUMO-AUTH", user.getAuthenticationToken());
             }
         }
-    }
-
-    private void mockData() {
-        Post post = new Post(2, "Hello!");
-        mClient.getTable(Post.class).insert(post, new TableOperationCallback<Post>() {
-            public void onCompleted(Post entity, Exception exception, ServiceFilterResponse response) {
-                if (exception == null) {
-                    System.out.println();
-                } else {
-                    System.out.println();
-                }
-            }
-        });
     }
 
     /**
@@ -265,12 +252,49 @@ public class MainActivity extends AppCompatActivity {
     private void createTable() {
         // Get the Mobile Service Table instance to use
         mPostTable = mClient.getTable(Post.class);
-        // Load the items from the Mobile Service
         refreshItemsFromTable();
     }
 
     private void refreshItemsFromTable() {
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                try {
+                    final MobileServiceList<Post> result = mPostTable.where().execute().get();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mPosts = result;
+                        }
+                    });
+                } catch (Exception exception) {
+                    createAndShowDialog(exception, "Error");
+                }
+                return null;
+            }
+        }.execute();
+    }
 
+    public String getItem(int position) {
+        //mClient.getTable(Post.class).lookUp(id, callback);
+        if (mPosts.size() > position)
+            return mPosts.get(position).getText();
+        return "";
+    }
+
+    @Override
+    public void onPost(String text) {
+        Post post = new Post(mUserId, text);
+        mClient.getTable(Post.class).insert(post, new TableOperationCallback<Post>() {
+            public void onCompleted(Post entity, Exception exception, ServiceFilterResponse response) {
+                if (exception == null) {
+                    //TODO: Fai qualcosa qua
+                    System.out.println();
+                } else {
+                    System.out.println();
+                }
+            }
+        });
     }
 
     /**
@@ -345,43 +369,4 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public class PlaceHolder extends Fragment {
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-
-            createTable();
-
-            RecyclerView recyclerView = new RecyclerView(getActivity());
-            recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-            recyclerView.setAdapter(new RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-                @Override
-                public int getItemCount() {
-                    return 30;
-                }
-
-                @Override
-                public void onBindViewHolder(ViewHolder holder, int position) {
-                    final ViewHolder fHolder = holder;
-                    mClient.getTable(Post.class).lookUp(position, new TableOperationCallback<Post>() {
-                        @Override
-                        public void onCompleted(Post entity, Exception exception, ServiceFilterResponse response) {
-                            if (entity != null)
-                                ((TextView) fHolder.itemView).setText(entity.toString());
-                        }
-                    });
-
-                }
-
-                @Override
-                public ViewHolder onCreateViewHolder(ViewGroup parent, int type) {
-                    LayoutInflater layoutInflater = getActivity().getLayoutInflater();
-                    View view = layoutInflater.inflate(android.R.layout.simple_list_item_1, parent, false);
-                    return new ViewHolder(view) {
-                    };
-                }
-            });
-
-            return recyclerView;
-        }
-    }
 }
