@@ -25,7 +25,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:id="@+id/imageView_toggleFavourite"
-            android:src="@drawable/abc_btn_rating_star_off_mtrl_alpha"/>
+            android:src="@drawable/toggle"/>
     </LinearLayout>
 
 </LinearLayout>

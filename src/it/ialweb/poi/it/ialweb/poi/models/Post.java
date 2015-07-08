@@ -18,6 +18,10 @@ public class Post {
         this.text = text;
     }
 
+    public Post(String id) {
+        this.id = id;
+    }
+
     @Override
     public String toString() {
         return "Post{" +
