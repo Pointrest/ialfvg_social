@@ -54,6 +54,9 @@ dependencies {
     compile 'com.github.bumptech.glide:glide:3.6.0'
     compile 'com.joanzapata.android:android-iconify:1.0.9'
     compile 'com.microsoft.azure:azure-mobile-services-android-sdk:2.0.2'
+
+    compile 'com.google.android.gms:play-services-base:6.5.87'
+    compile(group: 'com.microsoft.azure', name: 'azure-notifications-handler', version: '1.0.1', ext: 'jar')
 }
 
 eclipseAar {

@@ -34,8 +34,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ExecutionException;
 
 import com.microsoft.windowsazure.mobileservices.MobileServiceException;
-
+import com.microsoft.windowsazure.notifications.NotificationsManager;
+import com.microsoft.windowsazure.notifications.NotificationsManager;
 public class MainActivity extends AppCompatActivity implements NewPostDialog.Callback {
+
+    public static final String SENDER_ID = "baassi-999";
+    public static MobileServiceClient mClientMSC;
 
     private TabLayout tabLayout;
     private ViewPager viewPager;
@@ -67,6 +71,9 @@ public class MainActivity extends AppCompatActivity implements NewPostDialog.Cal
             createAndShowDialog(new Exception("Error creating the Mobile Service. " +
                     "Verify the URL"), "Error");
         }
+
+        NotificationsManager.handleNotifications(this, SENDER_ID, MyHandler.class);
+
         setupGui();
     }
 
