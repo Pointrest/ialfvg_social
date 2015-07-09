@@ -13,13 +13,13 @@ public class User {
     @SerializedName("Id")
     String id;
 
-    @SerializedName("Name")
+    @SerializedName("name")
     String name;
 
-    @SerializedName("Followers")
+    @SerializedName("followers")
     List<User> followers;
 
-    @SerializedName("Following")
+    @SerializedName("following")
     List<User> following;
 
     public User(String id, String name) {

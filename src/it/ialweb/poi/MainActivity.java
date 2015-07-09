@@ -285,20 +285,24 @@ public class MainActivity extends AppCompatActivity
     private void createTable() {
         // Get the Mobile Service Table instance to use
         mPostTable = mClient.getTable(Post.class);
-        refreshItemsFromTable();
+        mUserTable = mClient.getTable(User.class);
     }
 
-    private void refreshItemsFromTable() {
+    private void downloadPosts() {
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
                 try {
-                    final MobileServiceList<Post> result = mClient.getTable(Post.class).execute().get();
+                    final MobileServiceList<Post> result = mPostTable.execute().get();
                     runOnUiThread(
                             new Runnable() {
                                 @Override
                                 public void run() {
-                                    mPosts = result;
+                                    mPosts.clear();
+                                    for (Post p : result) {
+                                        mPosts.add(p);
+                                    }
+                                    mPostsAdapter.notifyDataSetChanged();
                                 }
                             });
                 } catch (Exception exception) {
@@ -325,7 +329,7 @@ public class MainActivity extends AppCompatActivity
                         runOnUiThread(new Runnable() {
                             public void run() {
                                 createAndShowDialog("", "Inserito!");
-                                mPosts.add(post);
+                                mPosts.add(0, post);
                                 mPostsAdapter.notifyDataSetChanged();
                             }
                         });
@@ -357,6 +361,31 @@ public class MainActivity extends AppCompatActivity
         }.execute();
     }
 
+    private void downloadUsers() {
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                try {
+                    final MobileServiceList<User> result = mUserTable.execute().get();
+                    runOnUiThread(
+                            new Runnable() {
+                                @Override
+                                public void run() {
+                                    mUsers.clear();
+                                    for (User u : result) {
+                                        mUsers.add(u);
+                                    }
+                                    mUsersAdapter.notifyDataSetChanged();
+                                }
+                            });
+                } catch (Exception exception) {
+                    createAndShowDialog(exception, "Error");
+                }
+                return null;
+            }
+        }.execute();
+    }
+
     @Override
     public void followUser(String userId) {
         mUser.getFollowing().add(new User(userId));
@@ -366,21 +395,18 @@ public class MainActivity extends AppCompatActivity
     @Override
     public List<User> getUserDataSet(RecyclerView.Adapter adapter) {
         mUsersAdapter = adapter;
-        mUsers = new ArrayList<User>() {{
-            add(new User("Blah", "ha"));
-            add(new User("Blah", "ha"));
-        }};
+        downloadUsers();
+        if (mUsers == null)
+            mUsers = new ArrayList<User>();
         return mUsers;
     }
 
     @Override
     public List<Post> getPostsDataSet(RecyclerView.Adapter adapter) {
         mPostsAdapter = adapter;
-        mPosts = new ArrayList<Post>() {{
-            add(new Post("primo", "hej"));
-            add(new Post("secondo", "hello"));
-            add(new Post("terzo", " zdravo"));
-        }};
+        downloadPosts();
+        if (mPosts == null)
+            mPosts = new ArrayList<Post>();
         return mPosts;
     }
 

@@ -2,15 +2,17 @@ package it.ialweb.poi.it.ialweb.poi.models;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Date;
+
 /**
  * Created by TSAIM044 on 07/07/2015.
  */
 public class Post {
 
     private String id;
-    @SerializedName("UserId")
+
     private String userId;
-    @SerializedName("Text")
+
     private String text;
 
     public Post(String userId, String text) {
