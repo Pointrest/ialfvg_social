@@ -1,7 +1,5 @@
 package it.ialweb.poi.it.ialweb.poi.models;
 
-import com.google.gson.annotations.SerializedName;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,16 +8,12 @@ import java.util.List;
  */
 public class User {
 
-    @SerializedName("Id")
     String id;
 
-    @SerializedName("name")
     String name;
 
-    @SerializedName("followers")
     List<User> followers;
 
-    @SerializedName("following")
     List<User> following;
 
     public User(String id, String name) {
@@ -48,5 +42,9 @@ public class User {
 
     public String getName() {
         return this.name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

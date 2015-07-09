@@ -37,6 +37,9 @@ public class UserProfileFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_user_profile, null);
 
+        if (savedInstanceState == null)
+            getFragmentManager().beginTransaction().add(R.id.frame_userPosts, new PostsListFragment(), "postslist");
+
         Bundle bundle = getArguments();
         String userId = "";
         if (bundle == null)

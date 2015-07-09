@@ -67,9 +67,9 @@ public class MainActivity extends AppCompatActivity
 
     public boolean bAuthenticating = false;
     public final Object mAuthenticationLock = new Object();
-    private String mUserId;
 
     private User mUser;
+    private String mUserId;
     private RecyclerView.Adapter mUsersAdapter;
     private RecyclerView.Adapter mPostsAdapter;
 
@@ -156,12 +156,13 @@ public class MainActivity extends AppCompatActivity
         editor.putString(TOKENPREF, user.getAuthenticationToken());
         editor.commit();
 
-        mUserId = user.getUserId();
         if (!getSharedPreferences(SHAREDPREFFILE, Context.MODE_PRIVATE).getBoolean(REGISTERED, false)) {
             registerUser(user.getUserId(), "tempname 4" + user.getUserId(), new TableOperationCallback<User>() {
                 @Override
                 public void onCompleted(User entity, Exception exception, ServiceFilterResponse response) {
                     if (exception == null) {
+                        mUser = entity;
+                        mUserId = entity.getId();
                         SharedPreferences prefs = getSharedPreferences(SHAREDPREFFILE, Context.MODE_PRIVATE);
                         SharedPreferences.Editor editor = prefs.edit();
                         editor.putBoolean(REGISTERED, true);
@@ -188,7 +189,32 @@ public class MainActivity extends AppCompatActivity
         user.setAuthenticationToken(token);
         client.setCurrentUser(user);
         mUserId = userId;
+        downloadAndSetCurrentUser(userId);
+
         return true;
+    }
+
+    private void downloadAndSetCurrentUser(final String userId) {
+
+        new AsyncTask<Void, Void, Void>() {
+
+            @Override
+            protected Void doInBackground(Void... params) {
+                try {
+                    final User result = mUserTable.lookUp(userId).get();
+                    runOnUiThread(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            mUser = result;
+                        }
+                    });
+                } catch (Exception exception) {
+                    createAndShowDialog(exception, "Error");
+                }
+                return null;
+            }
+        }.execute();
     }
 
     /**
@@ -389,6 +415,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void followUser(String userId) {
         mUser.getFollowing().add(new User(userId));
+        //mUser.setName("Cambiato");
         updateUser();
     }
 
